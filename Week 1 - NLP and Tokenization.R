@@ -61,3 +61,6 @@ BiostatRules
 nrow(tidytext(twitterLines$value[grepl(
     "A computer once beat me at chess, but it was no match for me at kickboxing", 
     twitterLines$value, ignore.case = FALSE)]))
+
+
+rm(data.twitter, data.news, data.blogs)
