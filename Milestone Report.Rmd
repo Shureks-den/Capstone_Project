@@ -1,0 +1,209 @@
+---
+title: "Milestone Report"
+author: "Alexander Klonov"
+date: "22 11 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Milestone report
+
+### Goal 
+The goal of this project is just to display that I've gotten used to working with the data and that I am on track to create1 prediction algorithm.
+
+### Motivation
+The motivation for this project is to: 
+
+- Demonstrate that I've downloaded the data and have successfully loaded it in.
+- Create a basic report of summary statistics about the data sets.
+- Report any interesting findings that I amassed so far.
+- Get feedback on plans for creating a prediction algorithm and Shiny app.
+
+### Downloading files
+
+Link to all archives is [here]("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip").
+Data consists of sentences from three different sources such as news, twitter and blogs. There were several languages,
+but I decided to stick with English language. 
+
+### Basic summary
+
+```{r, warning = FALSE, echo = FALSE, include=FALSE,  cache=TRUE}
+## Reading into memory
+
+data.blogs<-readLines("./final/en_US/en_US.blogs.txt", skipNul = TRUE)
+data.news<-readLines("./final/en_US/en_US.news.txt", skipNul = TRUE)
+data.twitter<-readLines("./final/en_US/en_US.twitter.txt", skipNul = TRUE)
+
+
+## What's to do next ????
+
+library(tidyverse) #keepin' things tidy
+library(tidytext) #package for tidy text analysis (Check out Julia Silge's fab book!)
+library(glue) #for pasting strings
+library(data.table)
+
+
+
+tidytext <- function (filename) {
+    structed.info<-as_data_frame(filename)
+    structed.info
+}
+
+tidyword <- function (filename) {
+    structed.info<-as_data_frame(filename)
+    head(structed.info)
+    blogTokens<-structed.info %>% unnest_tokens(word,value) %>% anti_join(data.frame(word = "a"))
+    blogTokens
+}
+
+structedNews<-tidyword(data.news)
+structedBlogs<-tidyword(data.blogs)
+structedTwitter<-tidyword(data.twitter)
+
+# Quiz 3
+max(nchar(tidytext(data.blogs)$value))
+max(nchar(tidytext(data.news)$value))
+max(nchar(tidytext(data.twitter)$value))
+
+# Quiz 4
+twitterLines<-tidytext(data.twitter)
+twitterLinesWithLove<-twitterLines$value[grepl("love", twitterLines$value, ignore.case = FALSE)]
+twitterLinesWithLove<-tidytext(twitterLinesWithLove)
+
+twitterLinesWithHate<-twitterLines$value[grepl("hate", twitterLines$value, ignore.case = FALSE)]
+twitterLinesWithHate<-tidytext(twitterLinesWithHate)
+
+nrow(twitterLinesWithLove) / nrow(twitterLinesWithHate)
+
+# Quiz 5 
+BiostatRules<-twitterLines$value[grepl("biostat", twitterLines$value, ignore.case = FALSE)]
+BiostatRules
+
+# Quiz 6 
+nrow(tidytext(twitterLines$value[grepl(
+    "A computer once beat me at chess, but it was no match for me at kickboxing", 
+    twitterLines$value, ignore.case = FALSE)]))
+
+
+
+```
+
+Lines and words count in each file:
+
+- Blogs 
+```{r, echo=FALSE, cache=TRUE}
+length(data.blogs) ## lines
+nrow(structedBlogs) ## words
+```
+
+- News
+```{r, echo=FALSE, cache=TRUE}
+length(data.news)  ## lines
+nrow(structedNews) ## words
+```
+
+- Twitter
+```{r, echo=FALSE, cache=TRUE}
+length(data.twitter)
+nrow(structedTwitter) ## words
+rm(data.twitter, data.news, data.blogs)
+```
+
+### How data looks like
+All data looks like this:
+```{r, echo=FALSE}
+head(data.twitter)
+```
+## Explanatory analyses
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tm)
+library(XML)
+library(wordcloud) 
+library(RColorBrewer)
+library(caret)
+library(NLP) 
+library(openNLP) 
+library(RWeka)
+library(qdap)
+library(ggplot2)
+```
+Setting seed for reproducible research.
+```{r}
+set.seed(3999)
+```
+
+Since datasets are too big, it's wise to split them into samples.
+```{r, warning = FALSE, echo = FALSE, include=FALSE,  cache=TRUE}
+## words
+words<-sample(structedBlogs$word,10000)
+words<-c(words, sample(structedNews$word, 10000))
+words<-c(words, sample(structedTwitter$word, 10000))
+
+sample.news<-sample(data.news, 2000)
+sample.twitter<-sample(data.twitter, 2000)
+sample.blogs<-sample(data.blogs, 2000)
+mass_sample<-c(sample.blogs, sample.news, sample.twitter)
+txt<-sent_detect(mass_sample)
+rm(sample.blogs, sample.news, sample.twitter)
+txt <- removeNumbers(txt)
+txt <- removePunctuation(txt)
+txt <- stripWhitespace(txt)
+txt <- tolower(txt)
+txt <- txt[which(txt!="")]
+txt <- data.frame(txt,stringsAsFactors = FALSE)
+grams<-NGramTokenizer(txt)
+
+for(i in 1:length(grams)) {
+    if(length(WordTokenizer(grams[i]))==2) 
+        break
+}
+
+for(j in 1:length(grams)) {
+    if(length(WordTokenizer(grams[j]))==1) 
+        break
+    }
+
+bigrams <- data.frame(table(grams[i:(j-1)]))
+bigrams <- bigrams[order(bigrams$Freq, decreasing = TRUE),]
+trigrams <- data.frame(table(grams[1:(i-1)]))
+trigrams <- trigrams[order(trigrams$Freq, decreasing = TRUE),]
+
+```
+
+Using *NGramTokenizer* we can split our data into tokens we can use in prediction model
+
+```{r, echo=FALSE}
+head(bigrams)
+```
+
+How let's make some visualizations
+
+WordCloud can show most popular words in our combines sample
+```{r, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+wordcloud(words, max.words = 250, random.order = FALSE, colors = brewer.pal(8, "Set2"))
+```
+
+And some barplots for 2 and 3 words combinations
+
+#### Bigrams
+```{r, echo=FALSE, cache=TRUE}
+top_bigrams <- bigrams[1:15,]
+bi_plot <- ggplot(top_bigrams, aes(x = reorder(Var1, -Freq), Freq))
+bi_plot + geom_bar(stat = "identity", col = "purple", fill = "#009999") + xlab("Bigrams")
+```
+
+#### Trigrams
+```{r, echo=FALSE, cache=TRUE}
+top_trigrams <- trigrams[1:10,]
+tri_gram_plot <- ggplot(top_trigrams, aes(x = reorder(Var1, -Freq), Freq))
+tri_gram_plot + geom_bar(stat = "identity", col = "blue", fill = "Forest Green") + xlab("Trigrams")
+
+```
+
+
+### Conclusion 
+
+So far, I've downloaded data, splitted it into words and grams. These objects can be used to make prediction models.
