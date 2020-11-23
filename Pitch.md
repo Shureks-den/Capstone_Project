@@ -1,0 +1,59 @@
+Word Predictor
+========================================================
+author: Alexander Klonov
+date: 23.11.2020
+autosize: true
+
+Web App
+========================================================
+
+Web app can be found here: <https://zennoma.shinyapps.io/Word_Predictor/>.
+
+App has several abilities:
+
+- It can be used to predict based on a single word of input;
+- However it's capable of analyze sentences and make predictions based on couple of words;
+- It's fast and reactive, meaning you get an instant answer;
+- Pretty straightforward and easy to use
+
+
+Algorithm explanation
+========================================================
+The main idea of the algorithm is to use provided data, to separate them by
+chunks and make prediction based of similarity of those chunks to the user's input.
+This method called *nGramTokenization* 
+
+After some data cleaning and refactoring we can get table which looks like this
+
+```r
+trigrams <- readRDS("./Word_Predictor/data/trigrams")
+head(trigrams)
+```
+
+```
+       Predictor Freq Result
+5732       a lot  153     of
+201717    one of  151    the
+281296     the u   80      s
+150920    it was   73      a
+248013   some of   72    the
+293469     to be   69      a
+```
+
+
+Quick start guide
+========================================================
+After you opened this web application you get to home or main page.
+It's there you use this program, you simple write something in special input box and get prediction.
+Also, user can set the number of different predicted words, they are formed in frequincy based list, meaning
+the most common combination will be first etc.
+
+![How does the page looks like](demo.png)
+
+Sources
+========================================================
+All work was done by Alexander Klonov for Coursera's Data Science Specialization course.
+
+Source files including shiny app can be found in git repository <https://github.com/Shureks-den/Capstone_Project>
+
+Thank you for your attention.
