@@ -8,9 +8,9 @@ unzip(zip_name)
 
 ## Reading into memory
 
-data.blogs<-readLines("./final/en_US/en_US.blogs.txt", skipNul = TRUE)
-data.news<-readLines("./final/en_US/en_US.news.txt", skipNul = TRUE)
-data.twitter<-readLines("./final/en_US/en_US.twitter.txt", skipNul = TRUE)
+data.blogs<-readLines("./final/en_US/en_US.blogs.txt", skipNul = TRUE, warn = FALSE, encoding = "UTF-8")
+data.news<-readLines("./final/en_US/en_US.news.txt", skipNul = TRUE, warn = FALSE, encoding = "UTF-8")
+data.twitter<-readLines("./final/en_US/en_US.twitter.txt", skipNul = TRUE, warn = FALSE, encoding = "UTF-8")
 
 
 ## What's to do next ????
@@ -37,6 +37,7 @@ tidyword <- function (filename) {
 structedNews<-tidyword(data.news)
 structedBlogs<-tidyword(data.blogs)
 structedTwitter<-tidyword(data.twitter)
+rm(data.twitter, data.news, data.blogs)
 
 # Quiz 3
 max(nchar(tidytext(data.blogs)$value))
